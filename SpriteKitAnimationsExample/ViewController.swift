@@ -10,7 +10,7 @@ import UIKit
 import SpriteKit
 
 final class ViewController: UIViewController {
-
+    
     // MARK: - Properties
     private let animationView = SKView()
     
@@ -22,6 +22,7 @@ final class ViewController: UIViewController {
         let scene = makeScene()
         animationView.frame.size = scene.size
         animationView.presentScene(scene)
+        createSceneContents(for: scene)
     }
     
     override func viewDidLayoutSubviews() {
@@ -36,6 +37,7 @@ final class ViewController: UIViewController {
 private extension ViewController {
     
     func addEmoji(to scene: SKScene) {
+        
         let allEmoji: [Character] = ["🍊", "🍋", "🍑", "🥭"]
         let distance = floor(scene.size.width / CGFloat(allEmoji.count))
         
@@ -77,5 +79,58 @@ private extension ViewController {
                     ]))
                 ]))
         }
+    }
+    
+    func createSceneContents(for scene: SKScene) {
+        let defaultNumberOfWalkFrames: Int = 28
+        let characterFramesOverOneSecond: TimeInterval = 1.0 / TimeInterval(defaultNumberOfWalkFrames)
+        let walkFrames = animationFrames(forImageNamePrefix: "warrior_walk_",
+                                         frameCount: defaultNumberOfWalkFrames)
+        
+        // Create the sprite with the initial frame.
+        let sprite = SKSpriteNode(texture: walkFrames.first)
+        sprite.position = CGPoint(x: animationView.frame.midX,
+                                  y: animationView.frame.midY + 60)
+        scene.addChild(sprite)
+        
+        // Cycle through the frames.
+        let animateFramesAction: SKAction = .animate(with: walkFrames,
+                                                     timePerFrame: characterFramesOverOneSecond,
+                                                     resize: true,
+                                                     restore: false)
+        let rotate: SKAction = .rotate(byAngle: .pi / 2, duration: 0.3)
+        let newPosition: CGFloat = 100
+        let moveDuration: TimeInterval = 1.0
+        sprite.run(.repeatForever(
+            .sequence(
+                [.group([ // Move to top
+                    animateFramesAction,
+                    .moveBy(x: 0.0, y: newPosition, duration: moveDuration)]),
+                 rotate,
+                 .group([ // Move to left
+                    animateFramesAction,
+                    .moveBy(x: -newPosition, y: 0.0, duration: moveDuration)]),
+                 rotate,
+                 .group([ // Move to bottom
+                    animateFramesAction,
+                    .moveBy(x: 0.0, y: -newPosition, duration: moveDuration)]),
+                 rotate,
+                 .group([ // Move to right
+                    animateFramesAction,
+                    .moveBy(x: newPosition, y: 0.0, duration: moveDuration)]),
+                 rotate])
+            ))
+    }
+
+    func animationFrames(forImageNamePrefix baseImageName: String,
+                         frameCount count: Int) -> [SKTexture] {
+        // Loads a series of frames from files stored in the app Assets, returning them in an array.
+        var array = [SKTexture]()
+        for index in 1...count {
+            let imageName = String(format: "%@%04d.png", baseImageName, index)
+            let texture = SKTexture(imageNamed: imageName)
+            array.append(texture)
+        }
+        return array
     }
 }
